@@ -7,8 +7,34 @@
 fetch('https://api.carbonintensity.org.uk/generation')
   .then(response => response.json())
   .then(data => {
+    const mix = data.data.generationmix;
+
+    function getFuel(name) {
+      const item = mix.find(x => x.fuel === name);
+      return item ? item.perc : 0;
+    }
+
+    const renewable =
+      getFuel('wind') +
+      getFuel('solar') +
+      getFuel('hydro') +
+      getFuel('biomass');
+
+    const fossil =
+      getFuel('gas') +
+      getFuel('coal') +
+      getFuel('imports') +
+      getFuel('other');
+
+    const output = {
+      title: "GRID",
+      renewable: Math.round(renewable),
+      fossil: Math.round(fossil),
+      updated: data.data.to.substring(11, 16)
+    };
+
     document.getElementById('output').innerText =
-      JSON.stringify(data, null, 2);
+      JSON.stringify(output, null, 2);
   });
 </script>
 
