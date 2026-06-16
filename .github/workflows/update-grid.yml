@@ -8,16 +8,13 @@ on:
 permissions:
   contents: write
 
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-
 jobs:
   update-grid:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
 
       - name: Fetch grid data and create JSON
         run: |
@@ -34,7 +31,7 @@ jobs:
               return item ? item.perc : 0;
             }
 
-            const clean =
+            const renewable =
               fuel("wind") +
               fuel("solar") +
               fuel("hydro") +
@@ -49,7 +46,7 @@ jobs:
 
             const output = {
               title: "GRID",
-              clean: Math.round(clean),
+              renewable: Math.round(renewable),
               fossil: Math.round(fossil),
               updated: json.data.to.substring(11, 16)
             };
