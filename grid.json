@@ -1,6 +1,7 @@
 {
     "title": "GRID",
-    "grid": 38,
-    "renewable": 45,
+    "currentusage": 54,
+    "renewable": 38,
+    "non-renewable": 45,
     "updated": "15:55"
 }
