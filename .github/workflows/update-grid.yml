@@ -1,0 +1,65 @@
+name: Update Grid JSON
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update-grid:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Fetch grid data and create JSON
+        run: |
+          node <<'EOF'
+          const fs = require("fs");
+
+          async function main() {
+            const res = await fetch("https://api.carbonintensity.org.uk/generation");
+            const json = await res.json();
+            const mix = json.data.generationmix;
+
+            function fuel(name) {
+              const item = mix.find(x => x.fuel === name);
+              return item ? item.perc : 0;
+            }
+
+            const renewable =
+              fuel("wind") +
+              fuel("solar") +
+              fuel("hydro") +
+              fuel("biomass");
+
+            const fossil =
+              fuel("gas") +
+              fuel("coal") +
+              fuel("imports") +
+              fuel("other");
+
+            const output = {
+              title: "GRID",
+              renewable: Math.round(renewable),
+              fossil: Math.round(fossil),
+              updated: json.data.to.substring(11, 16)
+            };
+
+            fs.writeFileSync("grid-live.json", JSON.stringify(output, null, 2));
+          }
+
+          main();
+          EOF
+
+      - name: Commit updated JSON
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add grid-live.json
+          git commit -m "Update grid data" || echo "No changes"
+          git push
