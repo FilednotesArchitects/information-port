@@ -63,4 +63,5 @@ jobs:
           git config user.email "github-actions@github.com"
           git add grid-live.json
           git commit -m "Update grid data" || echo "No changes"
+          git pull --rebase
           git push
