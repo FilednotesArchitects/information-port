@@ -14,11 +14,12 @@ fetch('https://api.carbonintensity.org.uk/generation')
       return item ? item.perc : 0;
     }
 
-    const renewable =
-      getFuel('wind') +
-      getFuel('solar') +
-      getFuel('hydro') +
-      getFuel('biomass');
+const renewable =
+  getFuel("wind") +
+  getFuel("solar") +
+  getFuel("hydro") +
+  getFuel("biomass") +
+  getFuel("nuclear");
 
     const fossil =
       getFuel('gas') +
