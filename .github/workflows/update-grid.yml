@@ -46,18 +46,18 @@ jobs:
 
             const now = new Date();
 
-const updated = now.toLocaleTimeString("en-GB", {
-  timeZone: "Europe/London",
-  hour: "2-digit",
-  minute: "2-digit"
-});
+            const updated = now.toLocaleTimeString("en-GB", {
+              timeZone: "Europe/London",
+              hour: "2-digit",
+              minute: "2-digit"
+            });
 
-const output = {
-  title: "GRID",
-  renewable: Math.round(renewable),
-  fossil: Math.round(fossil),
-  updated: updated
-};            };
+            const output = {
+              title: "GRID",
+              renewable: Math.round(renewable),
+              fossil: Math.round(fossil),
+              updated: updated
+            };
 
             fs.writeFileSync("grid-live.json", JSON.stringify(output, null, 2));
           }
