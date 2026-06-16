@@ -7,7 +7,8 @@ on:
 
 permissions:
   contents: write
-  env:
+
+env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
@@ -33,7 +34,7 @@ jobs:
               return item ? item.perc : 0;
             }
 
-            const renewable =
+            const clean =
               fuel("wind") +
               fuel("solar") +
               fuel("hydro") +
@@ -48,7 +49,7 @@ jobs:
 
             const output = {
               title: "GRID",
-              renewable: Math.round(renewable),
+              clean: Math.round(clean),
               fossil: Math.round(fossil),
               updated: json.data.to.substring(11, 16)
             };
