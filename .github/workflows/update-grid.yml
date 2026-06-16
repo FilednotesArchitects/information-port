@@ -35,7 +35,8 @@ jobs:
               fuel("wind") +
               fuel("solar") +
               fuel("hydro") +
-              fuel("biomass");
+              fuel("biomass") +
+              fuel("nuclear");
 
             const fossil =
               fuel("gas") +
