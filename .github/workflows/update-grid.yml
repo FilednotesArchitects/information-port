@@ -42,47 +42,30 @@ jobs:
             const nuclear = fuel("nuclear");
             const fossil = fuel("gas") + fuel("coal") + fuel("imports") + fuel("other");
 
-            let demandGW = null;
+         // --- Elexon demand ---
+let demandGW = null;
 
-            try {
-              const demand = await fetchJson("https://data.elexon.co.uk/bmrs/api/v1/datasets/INDO/stream");
-              const rows = Array.isArray(demand.data) ? demand.data : [];
-              fs.writeFileSync(
-  "elexon-debug.json",
-  JSON.stringify(demand, null, 2)
-);
+try {
+  const demand = await fetchJson("https://data.elexon.co.uk/bmrs/api/v1/datasets/INDO/stream");
+  const rows = Array.isArray(demand.data) ? demand.data : [];
 
-              const latest = rows
-                .filter(r => r.demand || r.initialDemandOutturn || r.nationalDemand)
-                .at(-1);
+  fs.writeFileSync("elexon-debug.json", JSON.stringify(rows.slice(-3), null, 2));
 
-              const demandMW =
-                latest?.demand ??
-                latest?.initialDemandOutturn ??
-                latest?.nationalDemand ??
-                null;
+  const latest = rows.at(-1);
 
-              if (demandMW !== null) {
-                demandGW = Math.round((demandMW / 1000) * 10) / 10;
-              }
-            } catch (err) {
-              console.log("Demand fetch failed:", err.message);
-            }
+  const demandMW =
+    latest?.initialDemandOutturn ??
+    latest?.demand ??
+    latest?.nationalDemand ??
+    latest?.value ??
+    null;
 
-            const updated = now.toLocaleTimeString("en-GB", {
-              timeZone: "Europe/London",
-              hour: "2-digit",
-              minute: "2-digit"
-            });
-
-            const current = {
-              title: "Grid",
-              renewables: Math.round(renewables),
-              fossil: Math.round(fossil),
-              nuclear: Math.round(nuclear),
-              lowcarbon: Math.round(renewables + nuclear),
-              demand_gw: demandGW,
-              updated
+  if (demandMW !== null) {
+    demandGW = Math.round((demandMW / 1000) * 10) / 10;
+  }
+} catch (err) {
+  console.log("Demand fetch failed:", err.message);
+}
             };
 
             fs.writeFileSync("grid-current.json", JSON.stringify(current, null, 2));
