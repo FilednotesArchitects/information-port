@@ -44,23 +44,22 @@ jobs:
 
             let demandGW = null;
 
-            try {
-              const demand = await fetchJson("https://data.elexon.co.uk/bmrs/api/v1/datasets/INDO/stream");
-              const rows = Array.isArray(demand.data) ? demand.data : [];
+            try {const demand = await fetchJson("https://data.elexon.co.uk/bmrs/api/v1/demand/outturn?format=json");
+const rows = Array.isArray(demand.data) ? demand.data : [];
 
-              const latest = rows
-                .filter(r => r.demand || r.initialDemandOutturn || r.nationalDemand)
-                .at(-1);
+const latest = rows.at(-1);
 
-              const demandMW =
-                latest?.demand ??
-                latest?.initialDemandOutturn ??
-                latest?.nationalDemand ??
-                null;
+const demandMW =
+  latest?.initialNationalDemandOutturn ??
+  latest?.initialDemandOutturn ??
+  latest?.demand ??
+  latest?.quantity ??
+  latest?.value ??
+  null;
 
-              if (demandMW !== null) {
-                demandGW = Math.round((demandMW / 1000) * 10) / 10;
-              }
+if (demandMW !== null) {
+  demandGW = Math.round((demandMW / 1000) * 10) / 10;
+}}
             } catch (err) {
               console.log("Demand fetch failed:", err.message);
             }
