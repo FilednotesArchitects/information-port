@@ -38,11 +38,12 @@ jobs:
               return item ? item.perc : 0;
             }
 
-            const renewables = fuel("wind") + fuel("solar") + fuel("hydro") + fuel("biomass");
-            const nuclear = fuel("nuclear");
-            const fossil = fuel("gas") + fuel("coal") + fuel("imports") + fuel("other");
+          const fossil = fuel("gas") + fuel("coal") + fuel("imports") + fuel("other");
 
-         
+let demandGW = null;
+
+try {
+
   const demand = await fetchJson("https://data.elexon.co.uk/bmrs/api/v1/demand/outturn?format=json");
   const rows = Array.isArray(demand.data) ? demand.data : [];
 
@@ -59,10 +60,10 @@ jobs:
   if (demandMW !== null) {
     demandGW = Math.round((demandMW / 1000) * 10) / 10;
   }
+
 } catch (err) {
   console.log("Demand fetch failed:", err.message);
-}
-            }
+}}
 
             const updated = now.toLocaleTimeString("en-GB", {
               timeZone: "Europe/London",
