@@ -1,21 +1,3 @@
-name: Update Grid Data
-
-on:
-  schedule:
-    - cron: "*/30 * * * *"
-  workflow_dispatch:
-
-permissions:
-  contents: write
-
-jobs:
-  update-grid:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
-
       - name: Fetch grid data
         run: |
           node <<'EOF'
@@ -30,6 +12,7 @@ jobs:
           async function main() {
             const now = new Date();
 
+            // --- Carbon Intensity generation mix ---
             const ci = await fetchJson("https://api.carbonintensity.org.uk/generation");
             const mix = ci.data.generationmix;
 
@@ -38,38 +21,63 @@ jobs:
               return item ? item.perc : 0;
             }
 
-            const renewables = fuel("wind") + fuel("solar") + fuel("hydro") + fuel("biomass");
+            const renewables =
+              fuel("wind") +
+              fuel("solar") +
+              fuel("hydro") +
+              fuel("biomass");
+
             const nuclear = fuel("nuclear");
-            const fossil = fuel("gas") + fuel("coal") + fuel("imports") + fuel("other");
 
-         // --- Elexon demand ---
-let demandGW = null;
+            const fossil =
+              fuel("gas") +
+              fuel("coal") +
+              fuel("imports") +
+              fuel("other");
 
-try {
-  const demand = await fetchJson("https://data.elexon.co.uk/bmrs/api/v1/datasets/INDO/stream");
-  const rows = Array.isArray(demand.data) ? demand.data : [];
+            // --- Elexon demand ---
+            let demandGW = null;
 
-  fs.writeFileSync("elexon-debug.json", JSON.stringify(rows.slice(-3), null, 2));
+            try {
+              const demand = await fetchJson("https://data.elexon.co.uk/bmrs/api/v1/datasets/INDO/stream");
+              const rows = Array.isArray(demand.data) ? demand.data : [];
 
-  const latest = rows.at(-1);
+              const latest = rows
+                .filter(r => r.demand || r.initialDemandOutturn || r.nationalDemand)
+                .at(-1);
 
-  const demandMW =
-    latest?.initialDemandOutturn ??
-    latest?.demand ??
-    latest?.nationalDemand ??
-    latest?.value ??
-    null;
+              const demandMW =
+                latest?.demand ??
+                latest?.initialDemandOutturn ??
+                latest?.nationalDemand ??
+                null;
 
-  if (demandMW !== null) {
-    demandGW = Math.round((demandMW / 1000) * 10) / 10;
-  }
-} catch (err) {
-  console.log("Demand fetch failed:", err.message);
-}
+              if (demandMW !== null) {
+                demandGW = Math.round((demandMW / 1000) * 10) / 10;
+              }
+            } catch (err) {
+              console.log("Demand fetch failed:", err.message);
+            }
+
+            const updated = now.toLocaleTimeString("en-GB", {
+              timeZone: "Europe/London",
+              hour: "2-digit",
+              minute: "2-digit"
+            });
+
+            const current = {
+              title: "Grid",
+              renewables: Math.round(renewables),
+              fossil: Math.round(fossil),
+              nuclear: Math.round(nuclear),
+              lowcarbon: Math.round(renewables + nuclear),
+              demand_gw: demandGW,
+              updated
             };
 
             fs.writeFileSync("grid-current.json", JSON.stringify(current, null, 2));
 
+            // --- CSV for Widgy line chart ---
             const historyPath = "grid-history.csv";
             let rows = [];
 
@@ -107,11 +115,3 @@ try {
 
           main();
           EOF
-
-      - name: Commit updated files
-        run: |
-          git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
-          git add grid-current.json grid-history.csv
-          git commit -m "Update grid data" || echo "No changes"
-          git push
