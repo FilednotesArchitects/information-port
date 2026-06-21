@@ -38,32 +38,44 @@ jobs:
               return item ? item.perc : 0;
             }
 
-          const fossil = fuel("gas") + fuel("coal") + fuel("imports") + fuel("other");
+            const renewables =
+              fuel("wind") +
+              fuel("solar") +
+              fuel("hydro") +
+              fuel("biomass");
 
-let demandGW = null;
+            const nuclear = fuel("nuclear");
 
-try {
+            const fossil =
+              fuel("gas") +
+              fuel("coal") +
+              fuel("imports") +
+              fuel("other");
 
-  const demand = await fetchJson("https://data.elexon.co.uk/bmrs/api/v1/demand/outturn?format=json");
-  const rows = Array.isArray(demand.data) ? demand.data : [];
+            let demandGW = null;
 
-  const latest = rows.length > 0 ? rows[rows.length - 1] : null;
+            try {
+              const demand = await fetchJson("https://data.elexon.co.uk/bmrs/api/v1/demand/outturn?format=json");
+              const demandRows = Array.isArray(demand.data) ? demand.data : [];
 
-  const demandMW =
-    latest?.initialNationalDemandOutturn ??
-    latest?.initialDemandOutturn ??
-    latest?.demand ??
-    latest?.quantity ??
-    latest?.value ??
-    null;
+              if (demandRows.length > 0) {
+                const latest = demandRows[demandRows.length - 1];
 
-  if (demandMW !== null) {
-    demandGW = Math.round((demandMW / 1000) * 10) / 10;
-  }
+                const demandMW =
+                  latest.initialNationalDemandOutturn ||
+                  latest.initialDemandOutturn ||
+                  latest.demand ||
+                  latest.quantity ||
+                  latest.value ||
+                  null;
 
-} catch (err) {
-  console.log("Demand fetch failed:", err.message);
-}}
+                if (demandMW !== null) {
+                  demandGW = Math.round((demandMW / 1000) * 10) / 10;
+                }
+              }
+            } catch (err) {
+              console.log("Demand fetch failed:", err.message);
+            }
 
             const updated = now.toLocaleTimeString("en-GB", {
               timeZone: "Europe/London",
@@ -78,34 +90,34 @@ try {
               nuclear: Math.round(nuclear),
               lowcarbon: Math.round(renewables + nuclear),
               demand_gw: demandGW,
-              updated
+              updated: updated
             };
 
             fs.writeFileSync("grid-current.json", JSON.stringify(current, null, 2));
 
             const historyPath = "grid-history.csv";
-            let rows = [];
+            let historyRows = [];
 
             if (fs.existsSync(historyPath)) {
-              rows = fs.readFileSync(historyPath, "utf8")
+              historyRows = fs.readFileSync(historyPath, "utf8")
                 .trim()
                 .split("\n")
                 .slice(1)
                 .filter(Boolean);
             }
 
-            rows.push([
+            historyRows.push([
               now.toISOString(),
               Math.round(renewables),
               Math.round(fossil),
               Math.round(nuclear),
               Math.round(renewables + nuclear),
-              demandGW ?? ""
+              demandGW === null ? "" : demandGW
             ].join(","));
 
             const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
 
-            rows = rows.filter(row => {
+            historyRows = historyRows.filter(row => {
               const timestamp = row.split(",")[0];
               return new Date(timestamp).getTime() >= sevenDaysAgo;
             });
@@ -113,7 +125,7 @@ try {
             fs.writeFileSync(
               historyPath,
               "timestamp,renewables,fossil,nuclear,lowcarbon,demand_gw\n" +
-              rows.join("\n") +
+              historyRows.join("\n") +
               "\n"
             );
           }
