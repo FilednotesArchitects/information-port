@@ -75,16 +75,14 @@ jobs:
               };
             } else {
               output = {
-                status: "upcoming",
-                match: "ENG v NZL",
-                venue: "Trent Bridge",
-                date: "26.06.26",
-                time: "11:00",
-                line1: "Next ENG match",
-                line2: "ENG v NZL",
-                line3: "Trent Bridge",
-                line4: "26.06.26 11:00",
-                updated
+                {
+  "status": "live",
+  "match": "ENG v NZL",
+  "line1": "ENG 312 (90.3)",
+  "line2": "ENG 27/1 (12.3)",
+  "line3": "NZL 401 (80.3)",
+  "updated": "21:45"
+}
               };
             }
 
