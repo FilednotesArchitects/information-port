@@ -1,0 +1,103 @@
+name: Update Cricket Data
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update-cricket:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Fetch cricket data
+        run: |
+          node <<'EOF'
+          const fs = require("fs");
+
+          async function main() {
+            const res = await fetch("https://www.espncricinfo.com/rss/livescores.xml");
+            if (!res.ok) throw new Error(`${res.status} Cricinfo RSS failed`);
+
+            const xml = await res.text();
+
+            const items = [...xml.matchAll(/<item>([\s\S]*?)<\/item>/g)].map(m => m[1]);
+
+            function clean(s) {
+              return s
+                .replace(/<!\[CDATA\[/g, "")
+                .replace(/\]\]>/g, "")
+                .replace(/&amp;/g, "&")
+                .replace(/&#39;/g, "'")
+                .replace(/&quot;/g, "\"")
+                .replace(/<[^>]*>/g, "")
+                .trim();
+            }
+
+            const titles = items.map(item => {
+              const title = item.match(/<title>([\s\S]*?)<\/title>/);
+              return title ? clean(title[1]) : "";
+            }).filter(Boolean);
+
+            // Find England men's Test match first.
+            const matchTitle =
+              titles.find(t =>
+                /England/i.test(t) &&
+                /New Zealand|NZ/i.test(t)
+              ) || null;
+
+            const now = new Date();
+
+            const updated = now.toLocaleTimeString("en-GB", {
+              timeZone: "Europe/London",
+              hour: "2-digit",
+              minute: "2-digit"
+            });
+
+            let output;
+
+            if (matchTitle) {
+              output = {
+                status: "live",
+                match: "ENG v NZL",
+                raw: matchTitle,
+                line1: matchTitle,
+                line2: "",
+                line3: "",
+                line4: "",
+                updated
+              };
+            } else {
+              output = {
+                status: "upcoming",
+                match: "ENG v NZL",
+                venue: "Trent Bridge",
+                date: "26.06.26",
+                time: "11:00",
+                line1: "Next ENG match",
+                line2: "ENG v NZL",
+                line3: "Trent Bridge",
+                line4: "26.06.26 11:00",
+                updated
+              };
+            }
+
+            fs.writeFileSync("cricket-current.json", JSON.stringify(output, null, 2));
+          }
+
+          main();
+          EOF
+
+      - name: Commit updated file
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add cricket-current.json
+          git commit -m "Update cricket data" || echo "No changes"
+          git push
