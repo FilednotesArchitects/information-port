@@ -47,10 +47,7 @@ jobs:
             try {const demand = await fetchJson("https://data.elexon.co.uk/bmrs/api/v1/demand/outturn?format=json");
 const rows = Array.isArray(demand.data) ? demand.data : [];
 
-const latest = rows.length > 0
-  ? rows[rows.length - 1]
-  : null;
-
+const latest = rows.length > 0 ? rows[rows.length - 1] : null;
 const demandMW =
   latest?.initialNationalDemandOutturn ??
   latest?.initialDemandOutturn ??
