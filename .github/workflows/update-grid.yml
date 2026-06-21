@@ -1,3 +1,21 @@
+name: Update Grid Data
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update-grid:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
       - name: Fetch grid data
         run: |
           node <<'EOF'
@@ -12,7 +30,6 @@
           async function main() {
             const now = new Date();
 
-            // --- Carbon Intensity generation mix ---
             const ci = await fetchJson("https://api.carbonintensity.org.uk/generation");
             const mix = ci.data.generationmix;
 
@@ -21,21 +38,10 @@
               return item ? item.perc : 0;
             }
 
-            const renewables =
-              fuel("wind") +
-              fuel("solar") +
-              fuel("hydro") +
-              fuel("biomass");
-
+            const renewables = fuel("wind") + fuel("solar") + fuel("hydro") + fuel("biomass");
             const nuclear = fuel("nuclear");
+            const fossil = fuel("gas") + fuel("coal") + fuel("imports") + fuel("other");
 
-            const fossil =
-              fuel("gas") +
-              fuel("coal") +
-              fuel("imports") +
-              fuel("other");
-
-            // --- Elexon demand ---
             let demandGW = null;
 
             try {
@@ -77,7 +83,6 @@
 
             fs.writeFileSync("grid-current.json", JSON.stringify(current, null, 2));
 
-            // --- CSV for Widgy line chart ---
             const historyPath = "grid-history.csv";
             let rows = [];
 
@@ -115,3 +120,11 @@
 
           main();
           EOF
+
+      - name: Commit updated files
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add grid-current.json grid-history.csv
+          git commit -m "Update grid data" || echo "No changes"
+          git push
