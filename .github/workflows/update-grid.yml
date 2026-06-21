@@ -42,9 +42,7 @@ jobs:
             const nuclear = fuel("nuclear");
             const fossil = fuel("gas") + fuel("coal") + fuel("imports") + fuel("other");
 
-            let demandGW = null;
-
-            try {let demandGW = null;
+          let demandGW = null;
 
 try {
   const demand = await fetchJson("https://data.elexon.co.uk/bmrs/api/v1/demand/outturn?format=json");
