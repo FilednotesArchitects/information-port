@@ -44,24 +44,28 @@ jobs:
 
             let demandGW = null;
 
-            try {const demand = await fetchJson("https://data.elexon.co.uk/bmrs/api/v1/demand/outturn?format=json");
-const rows = Array.isArray(demand.data) ? demand.data : [];
+            try {let demandGW = null;
 
-const latest = rows.length > 0 ? rows[rows.length - 1] : null;
-const demandMW =
-  latest?.initialNationalDemandOutturn ??
-  latest?.initialDemandOutturn ??
-  latest?.demand ??
-  latest?.quantity ??
-  latest?.value ??
-  null;
+try {
+  const demand = await fetchJson("https://data.elexon.co.uk/bmrs/api/v1/demand/outturn?format=json");
+  const rows = Array.isArray(demand.data) ? demand.data : [];
 
-if (demandMW !== null) {
-  demandGW = Math.round((demandMW / 1000) * 10) / 10;
+  const latest = rows.length > 0 ? rows[rows.length - 1] : null;
+
+  const demandMW =
+    latest?.initialNationalDemandOutturn ??
+    latest?.initialDemandOutturn ??
+    latest?.demand ??
+    latest?.quantity ??
+    latest?.value ??
+    null;
+
+  if (demandMW !== null) {
+    demandGW = Math.round((demandMW / 1000) * 10) / 10;
+  }
+} catch (err) {
+  console.log("Demand fetch failed:", err.message);
 }
-}}
-            } catch (err) {
-              console.log("Demand fetch failed:", err.message);
             }
 
             const updated = now.toLocaleTimeString("en-GB", {
