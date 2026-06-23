@@ -2,7 +2,7 @@ name: Update Cricket Data
 
 on:
   schedule:
-    - cron: "*/15 * * * *"
+    - cron: "*/6 * * * *"
   workflow_dispatch:
 
 permissions:
@@ -37,6 +37,7 @@ jobs:
                 .replace(/&#39;/g, "'")
                 .replace(/&quot;/g, "\"")
                 .replace(/<[^>]*>/g, "")
+                .replace(/\s+/g, " ")
                 .trim();
             }
 
@@ -44,13 +45,6 @@ jobs:
               const title = item.match(/<title>([\s\S]*?)<\/title>/);
               return title ? clean(title[1]) : "";
             }).filter(Boolean);
-
-            // Find England men's Test match first.
-            const matchTitle =
-              titles.find(t =>
-                /England/i.test(t) &&
-                /New Zealand|NZ/i.test(t)
-              ) || null;
 
             const now = new Date();
 
@@ -60,29 +54,149 @@ jobs:
               minute: "2-digit"
             });
 
+            function shortTeam(name) {
+              if (/england/i.test(name)) return "ENG";
+              if (/new zealand/i.test(name)) return "NZL";
+              return name.trim();
+            }
+
+            function normaliseScore(score) {
+              return score
+                .replace(/\*/g, "*")
+                .replace(/\s+/g, " ")
+                .trim();
+            }
+
+            function parseScore(raw) {
+              const title = raw.replace(/\s+\*\s+/g, " * ");
+
+              const parts = title.split(/\s+v\s+/i);
+              if (parts.length !== 2) return null;
+
+              const left = parts[0].trim();
+              const right = parts[1].trim();
+
+              function parseSide(side) {
+                const m = side.match(/^(.+?)\s+([0-9].*)$/);
+                if (!m) return null;
+
+                return {
+                  team: shortTeam(m[1]),
+                  score: normaliseScore(m[2])
+                };
+              }
+
+              const a = parseSide(left);
+              const b = parseSide(right);
+
+              if (!a || !b) return null;
+
+              return { a, b };
+            }
+
+            function detectInterval(raw) {
+              const lower = raw.toLowerCase();
+
+              if (lower.includes("lunch")) return "LUNCH";
+              if (lower.includes("tea")) return "TEA";
+              if (lower.includes("stumps")) return "STUMPS";
+              if (lower.includes("bad light")) return "BAD LIGHT";
+              if (lower.includes("rain")) return "RAIN";
+              if (lower.includes("delayed")) return "DELAYED";
+              if (lower.includes("abandoned")) return "ABANDONED";
+
+              return null;
+            }
+
+            function detectResult(raw) {
+              const lower = raw.toLowerCase();
+
+              if (
+                lower.includes(" won ") ||
+                lower.includes("drawn") ||
+                lower.includes("draw") ||
+                lower.includes("no result") ||
+                lower.includes("match tied")
+              ) {
+                return raw;
+              }
+
+              return null;
+            }
+
+            const englandMatch =
+              titles.find(t =>
+                /England/i.test(t) &&
+                /New Zealand|NZ/i.test(t)
+              ) || null;
+
             let output;
 
-            if (matchTitle) {
-              output = {
-                status: "live",
-                match: "ENG v NZL",
-                raw: matchTitle,
-                line1: matchTitle,
-                line2: "",
-                line3: "",
-                line4: "",
-                updated
-              };
+            if (englandMatch) {
+              const interval = detectInterval(englandMatch);
+              const result = detectResult(englandMatch);
+              const parsed = parseScore(englandMatch);
+
+              if (result) {
+                output = {
+                  status: "complete",
+                  match: "ENG v NZL",
+                  headline: "Result",
+                  line1: result,
+                  line2: "",
+                  line3: "",
+                  line4: "",
+                  raw: englandMatch,
+                  updated
+                };
+              } else if (interval && parsed) {
+                output = {
+                  status: interval.toLowerCase().replace(" ", "_"),
+                  match: "ENG v NZL",
+                  headline: interval,
+                  line1: `${parsed.a.team} ${parsed.a.score}`,
+                  line2: `${parsed.b.team} ${parsed.b.score}`,
+                  line3: "",
+                  line4: "",
+                  raw: englandMatch,
+                  updated
+                };
+              } else if (parsed) {
+                output = {
+                  status: "live",
+                  match: "ENG v NZL",
+                  headline: "Cricket",
+                  line1: `${parsed.a.team} ${parsed.a.score}`,
+                  line2: `${parsed.b.team} ${parsed.b.score}`,
+                  line3: "",
+                  line4: "",
+                  raw: englandMatch,
+                  updated
+                };
+              } else {
+                output = {
+                  status: "live",
+                  match: "ENG v NZL",
+                  headline: "Cricket",
+                  line1: englandMatch,
+                  line2: "",
+                  line3: "",
+                  line4: "",
+                  raw: englandMatch,
+                  updated
+                };
+              }
             } else {
               output = {
-                {
-  "status": "live",
-  "match": "ENG v NZL",
-  "line1": "ENG 312 (90.3)",
-  "line2": "ENG 27/1 (12.3)",
-  "line3": "NZL 401 (80.3)",
-  "updated": "21:45"
-}
+                status: "upcoming",
+                match: "ENG v NZL",
+                headline: "Next ENG match",
+                line1: "ENG v NZL",
+                line2: "Trent Bridge",
+                line3: "26.06.26",
+                line4: "11:00",
+                raw: "",
+                updated
               };
             }
 
