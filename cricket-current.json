@@ -1,10 +1,11 @@
 {
-  "status": "live",
+  "status": "upcoming",
   "match": "ENG v NZL",
-  "raw": "England 209/10 &  291/10 * v New Zealand 391/10 &  362/10",
-  "line1": "England 209/10 &  291/10 * v New Zealand 391/10 &  362/10",
-  "line2": "",
-  "line3": "",
-  "line4": "",
-  "updated": "21:45"
+  "headline": "Next ENG match",
+  "line1": "ENG v NZL",
+  "line2": "Trent Bridge",
+  "line3": "26.06.26",
+  "line4": "11:00",
+  "raw": "",
+  "updated": "22:00"
 }
