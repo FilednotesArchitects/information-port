@@ -26,7 +26,6 @@ jobs:
             if (!res.ok) throw new Error(`${res.status} Cricinfo RSS failed`);
 
             const xml = await res.text();
-
             const items = [...xml.matchAll(/<item>([\s\S]*?)<\/item>/g)].map(m => m[1]);
 
             function clean(s) {
@@ -67,31 +66,29 @@ jobs:
                 .trim();
             }
 
-          function parseScore(raw) {
-            const title = raw.trim();
+            function parseScore(raw) {
+              const title = raw.trim();
+              const parts = title.split(" v ");
+              if (parts.length !== 2) return null;
 
-            const parts = title.split(" v ");
-            if (parts.length !== 2) return null;
+              function parseSide(side) {
+                const cleaned = side.trim();
+                const m = cleaned.match(/^(.+?)(?:\s+([0-9].*))?$/);
+                if (!m) return null;
 
-            function parseSide(side) {
-            const cleaned = side.trim();
+                return {
+                  team: shortTeam(m[1]),
+                  score: m[2] ? normaliseScore(m[2]) : ""
+                };
+              }
 
-            const m = cleaned.match(/^(.+?)(?:\s+([0-9].*))?$/);
-            if (!m) return null;
+              const a = parseSide(parts[0]);
+              const b = parseSide(parts[1]);
 
-            return {
-            team: shortTeam(m[1]),
-            score: m[2] ? normaliseScore(m[2]) : ""
-    };
-  }
+              if (!a || !b) return null;
 
-  const a = parseSide(parts[0]);
-  const b = parseSide(parts[1]);
-
-  if (!a || !b) return null;
-
-  return { a, b };
-}
+              return { a, b };
+            }
 
             function detectInterval(raw) {
               const lower = raw.toLowerCase();
@@ -146,31 +143,31 @@ jobs:
                   line3: "",
                   line4: "",
                   raw: englandMatch,
-                  updated
+                  updated: updated
                 };
               } else if (interval && parsed) {
                 output = {
                   status: interval.toLowerCase().replace(" ", "_"),
                   match: "ENG v NZL",
                   headline: interval,
-                  line1: `${parsed.a.team} ${parsed.a.score}`,
-                  line2: `${parsed.b.team} ${parsed.b.score}`,
+                  line1: `${parsed.a.team} ${parsed.a.score}`.trim(),
+                  line2: `${parsed.b.team} ${parsed.b.score}`.trim(),
                   line3: "",
                   line4: "",
                   raw: englandMatch,
-                  updated
+                  updated: updated
                 };
               } else if (parsed) {
                 output = {
                   status: "live",
                   match: "ENG v NZL",
                   headline: "Cricket",
-                  line1: `${parsed.a.team} ${parsed.a.score}`,
-                  line2: `${parsed.b.team} ${parsed.b.score}`,
+                  line1: `${parsed.a.team} ${parsed.a.score}`.trim(),
+                  line2: `${parsed.b.team} ${parsed.b.score}`.trim(),
                   line3: "",
                   line4: "",
                   raw: englandMatch,
-                  updated
+                  updated: updated
                 };
               } else {
                 output = {
@@ -182,7 +179,7 @@ jobs:
                   line3: "",
                   line4: "",
                   raw: englandMatch,
-                  updated
+                  updated: updated
                 };
               }
             } else {
@@ -195,7 +192,7 @@ jobs:
                 line3: "26.06.26",
                 line4: "11:00",
                 raw: "",
-                updated
+                updated: updated
               };
             }
 
