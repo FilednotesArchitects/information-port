@@ -68,20 +68,20 @@ jobs:
             }
 
           function parseScore(raw) {
-  const title = raw.trim();
+            const title = raw.trim();
 
-  const parts = title.split(" v ");
-  if (parts.length !== 2) return null;
+            const parts = title.split(" v ");
+            if (parts.length !== 2) return null;
 
-  function parseSide(side) {
-    const cleaned = side.trim();
+            function parseSide(side) {
+            const cleaned = side.trim();
 
-    const m = cleaned.match(/^(.+?)(?:\s+([0-9].*))?$/);
-    if (!m) return null;
+            const m = cleaned.match(/^(.+?)(?:\s+([0-9].*))?$/);
+            if (!m) return null;
 
-    return {
-      team: shortTeam(m[1]),
-      score: m[2] ? normaliseScore(m[2]) : ""
+            return {
+            team: shortTeam(m[1]),
+            score: m[2] ? normaliseScore(m[2]) : ""
     };
   }
 
