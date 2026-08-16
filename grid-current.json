@@ -1,9 +1,9 @@
 {
   "title": "Grid",
-  "renewables": 18,
+  "renewables": 19,
   "fossil": 61,
   "nuclear": 21,
-  "lowcarbon": 39,
-  "demand_gw": 18.5,
-  "updated": "05:30"
+  "lowcarbon": 40,
+  "demand_gw": 18.2,
+  "updated": "06:23"
 }
